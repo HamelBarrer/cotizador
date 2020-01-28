@@ -1,5 +1,8 @@
 import React, {useState} from "react";
 import styled from "@emotion/styled";
+import {obtenerDiferenciaYear} from "../helper";
+import {calcularMarca} from "../helper";
+import {obtenerPlan} from "../helper";
 
 const Campo = styled.div`
     display: flex;
@@ -40,13 +43,24 @@ const Boton = styled.button`
     }
 `;
 
-const Formulario = () => {
+const Error = styled.div`
+    background-color: red;
+    color: white;
+    padding: 1rem;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 2rem;
+`;
+
+const Formulario = ({guardarResumen}) => {
 
     const [datos, guardarDatos] = useState({
         marca: '',
         year: '',
         plan: ''
     });
+
+    const [error, guardarError] = useState(false);
 
     // Extraer  los valores del state
     const {marca, year, plan} = datos;
@@ -59,8 +73,42 @@ const Formulario = () => {
         })
     };
 
+    // Cuando el usuario envia datos
+    const cotizarSeguro = e => {
+        e.preventDefault();
+        if (marca.trim() === '' || year.trim() === '' || plan.trim() === '') {
+            guardarError(true);
+            return;
+        }
+        guardarError(false);
+
+        let resultado = 2000;
+
+        // Obtenerla diferencia de años
+        const diferencia = obtenerDiferenciaYear(year);
+
+
+        // Por cada año hay que restar el valor
+        resultado -= ((diferencia * 3) * resultado) / 100;
+        resultado = calcularMarca(marca) * resultado;
+
+        // Plan Basico
+        // Plan completo
+        const incrementoPlan = obtenerPlan(plan);
+        resultado = parseFloat(incrementoPlan * resultado).toFixed(2);
+
+        // Total
+        guardarResumen({
+            cotizacion: resultado,
+            datos
+        });
+    };
+
     return (
-        <form>
+        <form
+            onSubmit={cotizarSeguro}
+        >
+            {error ? <Error>Todos los Campos son obligatorios</Error> : null}
             <Campo>
                 <Label>Marca</Label>
                 <Select
@@ -111,9 +159,9 @@ const Formulario = () => {
                     onChange={obtenerInformacion}
                 /> Completo
             </Campo>
-            <Boton type='button'>Cotizar</Boton>
+            <Boton type='submit'>Cotizar</Boton>
         </form>
     );
-}
+};
 
 export default Formulario;
